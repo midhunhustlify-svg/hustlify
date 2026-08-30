@@ -6,6 +6,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { UserRole, ROLE_CONFIG } from "@/types/auth";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import DashboardBottomNav from "@/components/dashboard/DashboardBottomNav";
 import { useAuth } from "@/context/AuthContext";
 import { useDashboard } from "@/context/DashboardContext";
 
@@ -80,6 +81,24 @@ export default function DashboardLayout({
       ),
     },
     {
+      id: "mystore",
+      name: "My Store",
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+        </svg>
+      ),
+    },
+    {
+      id: "enquiries",
+      name: "Enquiries",
+      icon: (
+        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
+        </svg>
+      ),
+    },
+    {
       id: "settings",
       name: "Settings",
       icon: (
@@ -93,41 +112,21 @@ export default function DashboardLayout({
 
   const navigationItems = customNavItems || defaultNavItems;
 
+  const getActiveTitle = () => {
+    if (activeTab === "settings") return "Settings";
+    if (activeTab === "mystore") return "My Store";
+    const current = navigationItems.find((item) => item.id === activeTab);
+    return current?.name || "Dashboard Overview";
+  };
+
   return (
     <div className="h-screen w-full bg-black text-white flex flex-col md:flex-row overflow-hidden">
-      {/* Mobile Top Header */}
-      <div className="md:hidden bg-neutral-950 px-4 py-3 flex items-center justify-between flex-shrink-0">
-        <Link href="/" className="flex items-center">
-          <Image
-            src="/logo/logo.png"
-            alt="Hustlify Logo"
-            width={120}
-            height={40}
-            className="h-8 w-auto object-contain"
-            priority
-          />
-        </Link>
-        <button
-          onClick={() => setMobileSidebarOpen(!mobileSidebarOpen)}
-          className="text-white p-2 focus:outline-none"
-          aria-label="Toggle navigation"
-        >
-          <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 12h16M4 18h16" />
-          </svg>
-        </button>
-      </div>
-
-      {/* Left Sidebar - Fixed height with internal scroll */}
-      <aside
-        className={`${
-          mobileSidebarOpen ? "block" : "hidden"
-        } md:flex flex-col w-full md:w-64 bg-neutral-950 p-6 flex-shrink-0 h-[calc(100vh-60px)] md:h-screen overflow-y-auto justify-between`}
-      >
+      {/* Left Sidebar - Desktop only (Untouched) */}
+      <aside className="hidden md:flex flex-col w-64 bg-neutral-950 p-6 flex-shrink-0 h-screen overflow-y-auto justify-between">
         <div className="space-y-8">
           {/* Centered Logo */}
           <div className="flex justify-center items-center w-full">
-            <Link href="/" className="hidden md:flex justify-center items-center w-full">
+            <Link href="/" className="flex justify-center items-center w-full">
               <Image
                 src="/logo/logo.png"
                 alt="Hustlify Logo"
@@ -149,7 +148,6 @@ export default function DashboardLayout({
                   type="button"
                   onClick={() => {
                     handleTabClick(item.id);
-                    setMobileSidebarOpen(false);
                   }}
                   className={`w-full flex items-center gap-3 px-3.5 py-2.5 text-xs font-semibold rounded-sm transition-colors text-left ${
                     isActive
@@ -196,15 +194,27 @@ export default function DashboardLayout({
           <DashboardHeader
             role={role}
             userEmail={userEmail}
-            activeTitle={activeTab === "settings" ? "Settings" : "Dashboard Overview"}
+            activeTitle={getActiveTitle()}
           />
         </div>
 
         {/* Right Side Main Content Area - Scrollable */}
-        <main className="flex-1 p-6 md:p-10 overflow-y-auto">
+        <main className="flex-1 p-6 md:p-10 pb-24 md:pb-10 overflow-y-auto">
           {children}
         </main>
       </div>
+
+      {/* Mobile Bottom Navigation Bar & Slide-up Sheet */}
+      <DashboardBottomNav
+        items={navigationItems}
+        activeTab={activeTab}
+        onTabChange={handleTabClick}
+        userEmail={userEmail}
+        onLogout={handleLogout}
+        role={role}
+        isMenuOpen={mobileSidebarOpen}
+        onToggleMenu={setMobileSidebarOpen}
+      />
     </div>
   );
 }

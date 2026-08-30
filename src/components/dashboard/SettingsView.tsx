@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { UserRole } from "@/types/auth";
 import { useDashboard, CompanySettings } from "@/context/DashboardContext";
+import { useToast } from "@/context/ToastContext";
 
 interface SettingsViewProps {
   role: UserRole;
@@ -10,13 +11,10 @@ interface SettingsViewProps {
 
 export default function SettingsView({ role: _role }: SettingsViewProps) {
   const { settings, saveSettings, fetchSettings } = useDashboard();
+  const { showToast } = useToast();
 
   const [formData, setFormData] = useState<CompanySettings>(settings);
   const [loading, setLoading] = useState(false);
-  const [statusMsg, setStatusMsg] = useState<{
-    type: "success" | "error";
-    text: string;
-  } | null>(null);
 
   useEffect(() => {
     fetchSettings();
@@ -39,20 +37,13 @@ export default function SettingsView({ role: _role }: SettingsViewProps) {
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    setStatusMsg(null);
 
     const result = await saveSettings(formData);
 
     if (result.success) {
-      setStatusMsg({
-        type: "success",
-        text: "Company settings saved successfully",
-      });
+      showToast("Company settings saved successfully", "success");
     } else {
-      setStatusMsg({
-        type: "error",
-        text: result.error || "Failed to save company settings",
-      });
+      showToast(result.error || "Failed to save company settings", "error");
     }
 
     setLoading(false);
@@ -65,26 +56,13 @@ export default function SettingsView({ role: _role }: SettingsViewProps) {
         <h1 className="text-2xl font-bold text-black tracking-tight">
           Company Details
         </h1>
-        <p className="text-xs text-neutral-500 mt-1">
+        <p className="text-xs text-neutral-500 mt-1 hidden md:block">
           Configure official company profile, contact channels, and address details
         </p>
       </div>
 
-      {/* Status feedback */}
-      {statusMsg && (
-        <div
-          className={`p-3 text-xs rounded-sm ${
-            statusMsg.type === "success"
-              ? "bg-black text-white font-medium"
-              : "bg-neutral-200 text-black font-medium"
-          }`}
-        >
-          {statusMsg.text}
-        </div>
-      )}
-
-      {/* Company Form Card */}
-      <div className="bg-neutral-50 p-6 rounded-sm space-y-6">
+      {/* Company Form */}
+      <div className="bg-transparent md:bg-neutral-50 p-0 md:p-6 rounded-sm space-y-6">
         <form onSubmit={handleSaveSettings} className="space-y-5">
           {/* General Information */}
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
