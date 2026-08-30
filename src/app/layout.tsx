@@ -4,6 +4,7 @@ import "./globals.css";
 import Navbar from "@/components/Navbar";
 import { AuthProvider } from "@/context/AuthContext";
 import { DashboardProvider } from "@/context/DashboardContext";
+import { ToastProvider } from "@/context/ToastContext";
 
 const switzer = localFont({
   src: [
@@ -39,8 +40,10 @@ export default function RootLayout({
       <body className="min-h-full flex flex-col bg-black text-white" suppressHydrationWarning>
         <AuthProvider>
           <DashboardProvider>
-            <Navbar />
-            {children}
+            <ToastProvider>
+              <Navbar />
+              {children}
+            </ToastProvider>
           </DashboardProvider>
         </AuthProvider>
       </body>

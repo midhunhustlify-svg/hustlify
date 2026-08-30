@@ -16,7 +16,7 @@ export default function DashboardHeader({
   const roleLabel = ROLE_CONFIG[role]?.label || role;
 
   return (
-    <header className="w-full bg-white text-black px-6 md:px-10 py-5 flex items-center justify-between">
+    <header className="w-full bg-white text-black px-6 md:px-10 py-5 flex items-center justify-between border-b border-black/10">
       {/* Left side: Page Title */}
       <div>
         <h1 className="text-xl font-bold tracking-tight text-black capitalize">
