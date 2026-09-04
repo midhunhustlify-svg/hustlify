@@ -122,7 +122,7 @@ export interface FaqSectionData {
   items: FaqItem[];
 }
 
-export type EnquiryStatus = "pending" | "follow_up" | "completed";
+export type EnquiryStatus = "pending" | "follow_up" | "completed" | "joined";
 
 export interface EnquiryItem {
   id: string;
@@ -131,6 +131,9 @@ export interface EnquiryItem {
   course?: string;
   message: string;
   status: EnquiryStatus;
+  converted_by?: string;
+  converted_at?: string;
+  deal_amount?: number;
   created_at: string;
   updated_at?: string;
 }
@@ -196,7 +199,11 @@ interface DashboardContextType {
   setEnquiries: React.Dispatch<React.SetStateAction<EnquiryItem[]>>;
   enquiriesLoaded: boolean;
   fetchEnquiries: () => Promise<void>;
-  updateEnquiryStatus: (id: string, status: EnquiryStatus) => Promise<{ success: boolean; error?: string }>;
+  updateEnquiryStatus: (
+    id: string,
+    status: EnquiryStatus,
+    extraData?: { converted_by?: string; deal_amount?: number }
+  ) => Promise<{ success: boolean; error?: string }>;
   deleteEnquiry: (id: string) => Promise<{ success: boolean; error?: string }>;
   addEnquiry: (enquiry: Omit<EnquiryItem, "id" | "created_at">) => Promise<{ success: boolean; error?: string }>;
 }
@@ -334,6 +341,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
           course: (item.course as string) || "",
           message: (item.message as string) || "",
           status: ((item.status as EnquiryStatus) || "pending"),
+          converted_by: item.converted_by as string | undefined,
+          converted_at: item.converted_at as string | undefined,
+          deal_amount: item.deal_amount !== undefined && item.deal_amount !== null ? Number(item.deal_amount) : undefined,
           created_at: (item.created_at as string) || new Date().toISOString(),
           updated_at: item.updated_at as string | undefined,
         }));
@@ -840,6 +850,9 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
       course: enquiry.course || "General Inquiry",
       message: enquiry.message,
       status: enquiry.status || "pending",
+      converted_by: enquiry.converted_by,
+      converted_at: enquiry.status === "joined" ? (enquiry.converted_at || new Date().toISOString()) : undefined,
+      deal_amount: enquiry.deal_amount,
       created_at: new Date().toISOString(),
     };
 
@@ -899,13 +912,25 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
 
   const updateEnquiryStatus = async (
     id: string,
-    status: EnquiryStatus
+    status: EnquiryStatus,
+    extraData?: { converted_by?: string; deal_amount?: number }
   ): Promise<{ success: boolean; error?: string }> => {
     try {
       const now = new Date().toISOString();
+      const isJoining = status === "joined";
+
       setEnquiries((prev) => {
         const updated = prev.map((item) =>
-          item.id === id ? { ...item, status, updated_at: now } : item
+          item.id === id
+            ? {
+                ...item,
+                status,
+                updated_at: now,
+                ...(extraData?.converted_by !== undefined ? { converted_by: extraData.converted_by } : {}),
+                ...(extraData?.deal_amount !== undefined ? { deal_amount: extraData.deal_amount } : {}),
+                ...(isJoining ? { converted_at: item.converted_at || now } : {}),
+              }
+            : item
         );
         if (typeof window !== "undefined") {
           localStorage.setItem("hustlify_enquiries", JSON.stringify(updated));
@@ -913,17 +938,33 @@ export function DashboardProvider({ children }: { children: ReactNode }) {
         return updated;
       });
 
+      const updatePayload: Record<string, unknown> = {
+        status,
+        updated_at: now,
+      };
+
+      if (extraData?.converted_by !== undefined) {
+        updatePayload.converted_by = extraData.converted_by;
+      }
+      if (extraData?.deal_amount !== undefined) {
+        updatePayload.deal_amount = extraData.deal_amount;
+      }
+      if (isJoining) {
+        updatePayload.converted_at = now;
+      }
+
       const { error } = await supabase
         .from("enquiries")
-        .update({ status, updated_at: now })
+        .update(updatePayload)
         .eq("id", id);
 
       if (error && error.code !== "42P01") {
         return { success: false, error: error.message };
       }
       return { success: true };
-    } catch (err: any) {
-      return { success: false, error: err?.message || "Failed to update enquiry status" };
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : "Failed to update enquiry status";
+      return { success: false, error: msg };
     }
   };
 
