@@ -45,9 +45,19 @@ export default function DashboardBottomNav({
   };
 
   // Quick items displayed in the bottom bar beside the Menu button
-  // Shows items such as Settings and any additional custom sidebar items added
-  const bottomBarItems = items.filter((item) => item.id !== "dashboard");
-  const quickItems = bottomBarItems.length > 0 ? bottomBarItems : items;
+  let quickItems: NavItem[] = [];
+
+  if (role === "super_admin") {
+    // For super admin, only show: Menu, Enquiries, Sales, Accounts, Settings
+    // All other items (Dashboard, My Store, Onboarding, etc.) are accessed via the Menu sheet
+    const superAdminBarIds = ["enquiries", "sales", "accounts", "settings"];
+    quickItems = superAdminBarIds
+      .map((id) => items.find((item) => item.id === id))
+      .filter((item): item is NavItem => Boolean(item));
+  } else {
+    const bottomBarItems = items.filter((item) => item.id !== "dashboard");
+    quickItems = bottomBarItems.length > 0 ? bottomBarItems : items;
+  }
 
   const roleLabel = role ? ROLE_CONFIG[role]?.label || role : null;
 
@@ -240,18 +250,8 @@ export default function DashboardBottomNav({
                 })}
               </div>
 
-              {/* Sheet Footer: User Email & Sign Out */}
-              <div className="px-5 pt-3 border-t border-neutral-800/80 space-y-3">
-                {userEmail && (
-                  <div className="px-1">
-                    <p className="text-[10px] text-neutral-500 uppercase font-semibold tracking-wider">
-                      Signed in as
-                    </p>
-                    <p className="text-xs text-neutral-300 font-medium truncate mt-0.5">
-                      {userEmail}
-                    </p>
-                  </div>
-                )}
+              {/* Sheet Footer: Sign Out */}
+              <div className="px-5 pt-3 border-t border-neutral-800/80">
                 <button
                   type="button"
                   onClick={() => {
