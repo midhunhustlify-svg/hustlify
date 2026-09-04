@@ -28,7 +28,7 @@ export default function LoginPage() {
 
     try {
       const { data, error } = await supabase.auth.signInWithPassword({
-        email,
+        email: email.trim(),
         password,
       });
 
@@ -38,8 +38,24 @@ export default function LoginPage() {
         return;
       }
 
-      const destination = getRoleDashboardPath(data.user?.user_metadata?.role);
-      router.push(destination);
+      let role = data.user?.user_metadata?.role;
+      if (!role && data.user?.id) {
+        try {
+          const { data: profile } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", data.user.id)
+            .single();
+          if (profile?.role) {
+            role = profile.role;
+          }
+        } catch {
+          // ignore
+        }
+      }
+
+      const destination = getRoleDashboardPath(role);
+      window.location.href = destination;
     } catch (err: unknown) {
       setErrorMsg(err instanceof Error ? err.message : "An unexpected error occurred");
       setLoading(false);

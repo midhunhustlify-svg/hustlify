@@ -19,6 +19,7 @@ import FaqSection from "@/components/landing/FaqSection";
 import ContactSection from "@/components/landing/ContactSection";
 import Footer from "@/components/landing/Footer";
 import FloatingContactWidget from "@/components/landing/FloatingContactWidget";
+import ScrollPopupForm from "@/components/landing/ScrollPopupForm";
 
 export default function Home() {
   const router = useRouter();
@@ -101,6 +102,7 @@ export default function Home() {
       <ContactSection settings={settings} />
       <Footer settings={settings} />
       <FloatingContactWidget />
+      <ScrollPopupForm />
     </main>
   );
 }
